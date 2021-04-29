@@ -1,0 +1,53 @@
+= Introduction =
+
+This Monte Carlo was developed for the associated publication and is provided under the LGPL-v3 license.
+It generates a distribution of MCP particles around a given detector.
+The distribution of particles is then propagated by PROPOSAL.
+Following this the propagations of the photons can be also performed.
+Photons that hit a given detector are recorded. Tools to plot the events are given.
+
+= Prerequisites =
+
+- PROPOSAL (can be installed via pip)
+- numpy
+- scipy
+- matplotlib for event viewers
+
+= Typical execution =
+
+The Monte Carlo is typically used in three steps:
+
+Generate the MCP events and their energy losses. For example:
+
+python generate_mcp_events.py --E_min 1e7 --E_max 2e7 --N_samples 10
+
+will generate 10 TeV-energy events. Values of the MCP mass and coupling can be changed by passing command line arguments.
+For a list of all available generation options use the -h argument.
+Running this command will produce, by default, an output filename called mcp_events.f2k.
+This file contains the event true properties and all their losses.
+Thresholds of which losses are saved can be modified in the Monte Carlo settings or, if further details are needed, in the provided PROPOSAL interface.
+The F2K format is described here:
+
+https://www.zeuthen.desy.de/~steffenp/f2000/
+
+Using that file, the energy losses can be converted into Cherenkov photons and propagated to the ice:
+
+python propagate_photons.py
+
+That will produce a file called, by default, mcp_events.ppc. 
+This file will contain the energy losses, again in F2K format, as well as the PMTs that have been hit by photons.
+The locations of the PMTs are given in the ./PPC/geo-f2k file and can be edited by the user.
+
+Finally, you can view your events by using the following command:
+
+python make_event_display.py
+
+= External software =
+
+For convenience and completeness we provide a copy of the Photon Propagation Code (PPC).
+Original source code, documentation, and more detail of PPC can be found here:
+
+https://icecube.wisc.edu/~dima/work/WISC/ppc/
+
+for questions about this code please email the author and developer D. Chirkin (dima@icecube.wisc.edu))
+
