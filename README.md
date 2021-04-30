@@ -7,7 +7,7 @@ This is the digital appendix associated to the article:
 
 ### "Millicharged Particles From The Heavens: Single- and Multiple-Scattering Signatures"
 
-Future link to [Arxiv Paper](https://arxiv.org/list/hep-ph/new) .
+Here is the link to the [Arxiv version](https://arxiv.org/abs/2104.13924) .
 
 Run the **Make_Plots.ipynb** notebook to reproduce some of the plots found in our paper!
 
