@@ -12,17 +12,18 @@ def WriteToF2KFormat(MCPEvents, output_filename, n_write = None):
         Details of the format can be found here:
         https://www.zeuthen.desy.de/~steffenp/f2000/
         In a nutshell this format is as follows:
-        
+
         TR int int name x y z theta phi length energy time
-        
+
         - TR stands for track and is a character constant.
         - The first two integer values are not used by ppc and are just for book keeping.
         - The name column specifies the track type.
-            Possible values are: “amu+”, “amu-” and “amu” for muons, “delta”, “brems”, “epair”, “e+”, “e-” and “e” for electromagnetic cascades and “munu” and “hadr” for hadronic cascades. x, y and z are the vector components of the track’s initial position in meters.
+            Possible values are: “amu+”, “amu-” and “amu” for muons, “delta”, “brems”, “epair”, “e+”, “e-” and “e” for electromagnetic cascades and “munu” and “hadr” for hadronic cascades.
+        - x, y and z are the vector components of the track’s initial position in meters.
         - theta and phi is the track’s theta and phi angle in degree, respectively.
-            length is the length of the track in meter. 
+            length is the length of the track in meter.
             It is only required for muons because cascades are treated as point-like sources.
-            energy is the track’s initial energy in GeV. 
+            energy is the track’s initial energy in GeV.
         - time is the track’s initial time in nanoseconds.
     """
     f = open(output_filename, 'w')
@@ -43,18 +44,15 @@ def WriteToF2KFormat(MCPEvents, output_filename, n_write = None):
         for ii, type_of_loss in enumerate(losses.keys()):
             xxx = []
             for loss in losses[type_of_loss]:
-                wretch = GetCartesianPoint(np.arccos(costh),phi,LA.norm(loss[1]))
-                wretch = np.insert(wretch,len(wretch),loss[0], axis=0)
-                x = wretch
                 magic_format = "TR {i} 0 {type_of_loss} {x} {y} {z} {theta} {phi} 0 {ee} {t} \n".format(
                     i = i,
                     type_of_loss = TypeLossNameConverter(type_of_loss),
-                    x=x[0]*cm_to_m,
-                    y=x[1]*cm_to_m,
-                    z=x[2]*cm_to_m,
+                    x=loss[1][0]*cm_to_m,
+                    y=loss[1][1]*cm_to_m,
+                    z=loss[1][2]*cm_to_m,
                     theta=np.arccos(costh),
                     phi=phi,
-                    ee=10**x[3]*MeV_to_GeV,
+                    ee=10**loss[0]*MeV_to_GeV,
                     t=0)
                 f.write(magic_format)
         f.write("EE\n")

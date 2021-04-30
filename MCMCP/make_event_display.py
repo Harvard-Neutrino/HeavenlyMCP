@@ -28,7 +28,7 @@ def PlotIceCubeDetectorDOMLocations(icecube_geometry_f2k):
     cbar = fig.colorbar(scat, shrink=0.5, aspect=5)
 
     plt.show()
-    
+
 def ReadEventInfo(ppc_hits_file):
     """
         Reads the output from PPC into HIT information and MC information for each event.
@@ -73,7 +73,7 @@ def MakeEventDictionary(hitinfo, geofile = np.genfromtxt('./PPC/geo-f2k')):
         Reads the output from PPC into HIT information and MC information for each event.
         HITINFO contains the list of DOMs that were hit and with how much light.
         MCINFO contains the event true properties: Energy, Interaction Vertex, Zenith Angle, Azimuthal Angle
-    """   
+    """
     event_dict   = {tuple(tup[:2]):(tuple(tup[2:]),[]) for tup in zip(geofile[:,5],geofile[:,6],geofile[:,2],geofile[:,3],geofile[:,4])
                  }
     for hit in hitinfo:
@@ -84,7 +84,7 @@ def MakeEventDictionary(hitinfo, geofile = np.genfromtxt('./PPC/geo-f2k')):
 
 def PlotEventHits(event_dict, hitinfo, lossinfo, mcinfo, fig_name,
                   show_array = True,
-                  show_mc_track = False,
+                  show_mc_track = True,
                   show_losses = True,
                   loss_threshold = 0.1,
                   interactive = True,
@@ -102,10 +102,10 @@ def PlotEventHits(event_dict, hitinfo, lossinfo, mcinfo, fig_name,
     """
     if(len(hitinfo) == 0 and not plot_no_hit_events):
         return
-    
+
     fig = plt.figure(figsize=(15,15))
     ax  = fig.add_subplot(111, projection='3d')
-    
+
     if(len(hitinfo)>0):
         X = [event_dict[(nstr,ndom)][0][0] for nstr in sorted(list(set(hitinfo[:,1])))
                                            for ndom in sorted(list(set(hitinfo[:,2])))
@@ -164,7 +164,7 @@ def PlotEventHits(event_dict, hitinfo, lossinfo, mcinfo, fig_name,
         #ax.scatter(cpoint[0],cpoint[1],cpoint[2], "*", color = "blue", )
         ax.plot(x_track,y_track,z_track, color = "gray", lw = 0.75)
         ax.text2D(0.05, 0.85, "E = {E:0.2f} GeV".format(E = energy), transform = ax.transAxes)
-    
+
     if show_array:
         AX = [event_dict[key][0][0] for key in event_dict.keys() if key[1]<60] # 60 excludes IceTop3<<
         AY = [event_dict[key][0][1] for key in event_dict.keys() if key[1]<60]
@@ -186,8 +186,8 @@ def PlotEventHits(event_dict, hitinfo, lossinfo, mcinfo, fig_name,
         plt.show()
     plt.clf()
     plt.close()
-    
-if __name__ == "__main__":   
+
+if __name__ == "__main__":
     import argparse
     import os, sys
     import subprocess
@@ -203,6 +203,14 @@ if __name__ == "__main__":
                         help='Plot output format')
     parser.add_argument('-g',dest='geometry',type=str,default="./PPC/geo-f2k",
                         help='Input detector geometry in F2K format.')
+    parser.add_argument('--mctrack',dest='mctrack',type=bool,default=True,
+                        help='Plots the MC track.')
+    parser.add_argument('--losses',dest='losses',type=bool,default=True,
+                        help='Plots the losses locations from PROPOSAL.')
+    parser.add_argument('--losses_threshold',dest='losses_threshold',type=float,default=0.1,
+                        help='Minimum loss size to plot.')
+    parser.add_argument('--interactive',dest='interactive',type=float,default=0.1,
+                        help='Minimum loss size to plot.')
 
     args = parser.parse_args()
     hitinfo, lossinfo, mcinfo = ReadEventInfo(args.input)
