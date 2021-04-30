@@ -1,9 +1,10 @@
 # Construc Feldman Cousin's interval
+# Author: Austin Schneider <aschn@mit.edu>
+# https://gist.github.com/austinschneider/dff177d1ce9ea37b31a34d4fc317762d
 
 import numpy as np
 from scipy.stats import poisson
 import collections
-print('fc called!')
 import os
 cwd = os.getcwd()
 
