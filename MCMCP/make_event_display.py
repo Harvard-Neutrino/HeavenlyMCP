@@ -155,10 +155,10 @@ def PlotEventHits(event_dict, hitinfo, lossinfo, mcinfo, fig_name,
         cpoint = point + dir*t_0
         energy = mcinfo[0]
         # make track
-        tMC = np.linspace(-600.0,600.0,100)
-        x_track = point[0] + dir[0]*tMC
-        y_track = point[1] + dir[1]*tMC
-        z_track = point[2] + dir[2]*tMC
+        tMC = np.linspace(-700.0,700.0,100)
+        x_track = cpoint[0] + dir[0]*tMC
+        y_track = cpoint[1] + dir[1]*tMC
+        z_track = cpoint[2] + dir[2]*tMC
         #ax.scatter(point[0],point[1],point[2], "*", color = "green", )
         #ax.scatter(opoint[0],opoint[1],opoint[2], "*", color = "red", )
         #ax.scatter(cpoint[0],cpoint[1],cpoint[2], "*", color = "blue", )
@@ -203,13 +203,15 @@ if __name__ == "__main__":
                         help='Plot output format')
     parser.add_argument('-g',dest='geometry',type=str,default="./PPC/geo-f2k",
                         help='Input detector geometry in F2K format.')
-    parser.add_argument('--mctrack',dest='mctrack',type=bool,default=True,
+    parser.add_argument('--no-array',dest='array',default=True, action = 'store_false',
                         help='Plots the MC track.')
-    parser.add_argument('--losses',dest='losses',type=bool,default=True,
+    parser.add_argument('--mctrack',dest='mctrack',default=False, action = 'store_true',
+                        help='Plots the MC track.')
+    parser.add_argument('--losses',dest='losses',default=False, action = 'store_true',
                         help='Plots the losses locations from PROPOSAL.')
     parser.add_argument('--losses_threshold',dest='losses_threshold',type=float,default=0.1,
                         help='Minimum loss size to plot.')
-    parser.add_argument('--interactive',dest='interactive',type=float,default=0.1,
+    parser.add_argument('--interactive',dest='interactive',default=False, action = 'store_true',
                         help='Minimum loss size to plot.')
 
     args = parser.parse_args()
@@ -218,7 +220,14 @@ if __name__ == "__main__":
     events_dictionaries = [MakeEventDictionary(hits,geofile) for hits in hitinfo]
     print(len(events_dictionaries),np.shape(lossinfo), np.shape(mcinfo))
     [PlotEventHits(events_dictionaries[i],
-               hitinfo[i],
-               lossinfo[i],
-               mcinfo[i],
-               f"./figures/{args.output_root}_{i}.{args.format}") for i in range(len(hitinfo))]
+                   hitinfo[i],
+                   lossinfo[i],
+                   mcinfo[i],
+                   f"./figures/{args.output_root}_{i}.{args.format}",
+                   show_array = True,
+                   show_mc_track = args.mctrack,
+                   show_losses = args.losses,
+                   loss_threshold = args.losses_threshold,
+                   interactive = args.interactive,
+                   plot_no_hit_events = False
+                   ) for i in range(len(hitinfo))]
