@@ -11,10 +11,12 @@ parser.add_argument('-d',dest='device',type=int,default=0,
                     help='Device to use in the calculation, GPU or CPU.')
 parser.add_argument('--PPCTables',dest='ppctables',type=str,default="./PPC",
                     help='Location of the PPC tables.')
+parser.add_argument('--PPCExe',dest='ppcexe',type=str,default="./PPC/ppc",
+                    help='Location of the PPC executable.')
 
 args = parser.parse_args()
 
-command = f'./PPC/ppc {args.device} < {args.input} > {args.output}'
+command = f'{args.ppcexe} {args.device} < {args.input} > {args.output}'
 print(command)
 
 tenv = os.environ.copy()
