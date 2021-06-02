@@ -20,3 +20,6 @@ For questions, contact any of the three authors:
 Carlos A. Arguelles: carguelles@fas.harvard.edu \\
 Kevin J. Kelly: kkelly12@fnal.gov \\ 
 Víctor M. Muñoz: vicmual@ific.uv.es
+
+
+**If you use part of this code/data please don't forget to cite our work.**
