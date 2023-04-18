@@ -19,23 +19,32 @@ def make_propagator(mcp_def, ecut = 500, vcut = 1e-4, consider_soft_losses = Tru
     vcut: relative energy loss cut threshold (dimensionless)
     consider_soft_losses: soft losses will be tracked individually or not
     """
-    geometry = pp.geometry.Sphere(pp.Vector3D(), 1.e20, 0.0)
-    sector_def = pp.SectorDefinition()
-    sector_def.cut_settings = pp.EnergyCutSettings(ecut, vcut)
-    sector_def.medium = pp.medium.Ice()
-    sector_def.geometry = geometry
-    sector_def.scattering_model = pp.scattering.ScatteringModel.NoScattering
-    sector_def.crosssection_defs.brems_def.lpm_effect = False
-    sector_def.crosssection_defs.epair_def.lpm_effect = False
-    sector_def.do_continuous_energy_loss_output = consider_soft_losses
+    target = pp.medium.Ice()
+    cuts = pp.EnergyCutSettings(ecut, vcut)
+    geometry = pp.geometry.Sphere(pp.Cartesian3D(0, 0, 0), 1.e20, 0.0)
+    interpolate = True
+    density_distr = pp.density_distribution.density_homogeneous(target.mass_density)
 
-    detector = geometry
+    cross = []
+    ioniz = pp.parametrization.ionization.BetheBlochRossi(cuts)
+    cross.append(pp.crosssection.make_crosssection(ioniz, mcp_def, target, cuts, interpolate))
+    pair = pp.parametrization.pairproduction.SandrockSoedingreksoRhode(lpm=False)
+    cross.append(pp.crosssection.make_crosssection(pair, mcp_def, target, cuts, interpolate))
+    shadow = pp.parametrization.photonuclear.ShadowButkevichMikheyev() 
+    nucl = pp.parametrization.photonuclear.BlockDurandHa(shadow)
+    cross.append(pp.crosssection.make_crosssection(nucl, mcp_def, target, cuts, interpolate))
+    brems = pp.parametrization.bremsstrahlung.SandrockSoedingreksoRhode(lpm=False)
+    cross.append(pp.crosssection.make_crosssection(brems, mcp_def, target, cuts, interpolate))
 
-    interpolation_def = pp.InterpolationDef()
-    interpolation_def.path_to_tables = "~/.local/share/PROPOSAL/tables"
-    interpolation_def.path_to_tables_readonly = "~/.local/share/PROPOSAL/tables"
+    collection = pp.PropagationUtilityCollection()
+    collection.displacement = pp.make_displacement(cross, True)
+    collection.interaction = pp.make_interaction(cross, True)
+    collection.time = pp.make_time(cross, mcp_def, True)
+    utility = pp.PropagationUtility(collection = collection)
 
-    prop = pp.Propagator(mcp_def, [sector_def], detector, interpolation_def)
+    pp.InterpolationSettings.tables_path = "~/.local/share/PROPOSAL/tables"
+
+    prop = pp.Propagator(mcp_def, [(geometry, utility, density_distr)])
     return prop
 
 def propagate_mcp(mcp_energies, mcp_def, direction = (0,0,-1), position = (0,0,0),
@@ -58,28 +67,31 @@ def propagate_mcp(mcp_energies, mcp_def, direction = (0,0,-1), position = (0,0,0
     energy_losses["ioniz"] = []
     energy_losses["photo"] = []
 
-    mcp_prop = pp.particle.DynamicData(mcp_def.particle_type)
-    mcp_prop.position = pp.Vector3D(*position)
-    mcp_prop.direction = pp.Vector3D(*direction)
+    mcp_prop = pp.particle.ParticleState()
+    mcp_prop.position = pp.Cartesian3D(*position)
+    mcp_prop.direction = pp.Cartesian3D(*direction)
     mcp_prop.propagated_distance = 0
 
     for mcp_energy in mcp_energies:
         mcp_prop.energy = mcp_energy
-        secondarys = prop.propagate(mcp_prop, propagation_length)
+        secondaries = prop.propagate(mcp_prop, propagation_length)
 
-        for sec in secondarys.particles:
+        for sec in secondaries.continuous_losses():
+            log_sec_energy = np.log10(sec.parent_particle_energy - sec.energy)
+            sec_position = 0.5*(sec.end_position + sec.start_position)
+            energy_losses["continuous"].append([log_sec_energy,np.array([sec_position.x,sec_position.y,sec_position.z])])
+
+        for sec in secondaries.stochastic_losses():
             log_sec_energy = np.log10(sec.parent_particle_energy - sec.energy)
             #log_sec_energy = np.log10(sec.energy)
 
-            if sec.type == int(pp.particle.Interaction_Type.ContinuousEnergyLoss):
-                energy_losses["continuous"].append([log_sec_energy,np.array([sec.position.x,sec.position.y,sec.position.z])])
-            if sec.type == int(pp.particle.Interaction_Type.Epair):
+            if sec.type == int(pp.particle.Interaction_Type.epair):
                 energy_losses["epair"].append([log_sec_energy,np.array([sec.position.x,sec.position.y,sec.position.z])])
-            if sec.type == int(pp.particle.Interaction_Type.Brems):
+            if sec.type == int(pp.particle.Interaction_Type.brems):
                 energy_losses["brems"].append([log_sec_energy,np.array([sec.position.x,sec.position.y,sec.position.z])])
-            if sec.type == int(pp.particle.Interaction_Type.DeltaE):
+            if sec.type == int(pp.particle.Interaction_Type.ioniz):
                 energy_losses["ioniz"].append([log_sec_energy,np.array([sec.position.x,sec.position.y,sec.position.z])])
-            if sec.type == int(pp.particle.Interaction_Type.NuclInt):
+            if sec.type == int(pp.particle.Interaction_Type.photonuclear):
                 energy_losses["photo"].append([log_sec_energy,np.array([sec.position.x,sec.position.y,sec.position.z])])
 
     if save_to_file:
